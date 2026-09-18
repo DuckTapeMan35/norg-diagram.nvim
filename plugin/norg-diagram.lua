@@ -1,0 +1,1 @@
+require("norg-diagram").setup()
