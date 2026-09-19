@@ -1,8 +1,9 @@
 local M = {}
 
 -- Optional user mapping: ["#ff0000"] = "DiagnosticError"
--- Set from your plugin config so diagram colors follow the colorscheme.
 M.map = {}
+
+local SGR = "\27%[([%d;]*)m"
 
 local base = {
 	[30] = "#000000",
@@ -109,12 +110,15 @@ function M.parse_line(line, fallback)
 	local state = { fg = nil, bold = false }
 
 	while true do
-		local s, e, params = line:find("\27%[([%d;]*)m", pos)
+		local s, e, params = line:find(SGR, pos)
 		if not s then
 			break
 		end
 		if s > pos then
-			table.insert(chunks, { line:sub(pos, s - 1), group_for(state.fg, state.bold, fallback) })
+			table.insert(
+				chunks,
+				{ line:sub(pos, s - 1), group_for(state.fg, state.bold, fallback) }
+			)
 		end
 		apply(params, state)
 		pos = e + 1
@@ -130,10 +134,9 @@ function M.parse_line(line, fallback)
 end
 
 function M.strip(s)
-	return (s:gsub("\27%[[%d;]*m", ""))
+	return (s:gsub(SGR, ""))
 end
 
--- Drop generated groups so they are rebuilt against a new colorscheme.
 function M.reset()
 	groups = {}
 end

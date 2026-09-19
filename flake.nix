@@ -38,7 +38,7 @@
           ];
 
           shellHook = ''
-            export NORG_DIAGRAM_DEV="${self}"
+            export NORG_DIAGRAM_DEV="$PWD"
           '';
         };
       });

@@ -1,0 +1,204 @@
+* norg-diagram test file
+
+  Cursor on a block, then `:NorgDiagramFloat` for the link view.
+  `:NorgDiagramToggle` and `:Neorg toggle-concealer` should both reveal source.
+
+** 1. Basic mermaid, no directives
+
+   Plain render, everything on `hl`, borders on `edge_hl`.
+
+@code mermaid
+graph TD
+A[Index] --> B[Projects]
+A --> C[Journal]
+@end
+
+** 2. Basic d2
+
+   Note d2 indents its output; the first line must line up with the rest.
+
+@code d2
+api: API
+db: Postgres
+api -> db: query
+@end
+
+** 3. Theme colors via ::: (mermaid only)
+
+   No classDef lines: the preprocessor generates them. Labels only,
+   since mermaid-ascii colors the text and not the box.
+
+@code mermaid
+graph LR
+api[API]:::green --> db[Postgres]:::blue
+api --> cache[Redis]:::red
+@end
+
+** 4. Explicit hex in classDef passes through untouched
+
+@code mermaid
+graph LR
+classDef alarm color:#ff00ff
+ok[Healthy] --> bad[Failing]:::alarm
+@end
+
+** 5. #color on a label
+
+@code d2
+api: API
+db: Postgres
+api -> db: query
+#color API green
+#color query red
+@end
+
+** 6. #color on a box
+
+   The whole rectangle, including borders, should be blue.
+
+@code d2
+api: API
+db: Postgres
+api -> db
+#color Postgres blue box
+@end
+
+** 7. Label and box, different colors, both orders
+
+   Both should give a red box with a green label.
+
+@code d2
+api: API
+db: Postgres
+api -> db
+#color API red box
+#color API green
+@end
+
+@code d2
+svc: Service
+store: Store
+svc -> store
+#color Service green
+#color Service red box
+@end
+
+** 8. ::: beats #color on the same label
+
+   API stays green (from :::), its box turns red.
+
+@code mermaid
+graph LR
+api[API]:::green --> db[Postgres]
+%%color API red box
+%%color API blue
+@end
+
+** 9. Three-node layout: the third box must be detected
+
+   Redis sits lower than the others, so its box is on rows where the
+   columns above contain connectors. All three boxes should be found.
+
+@code mermaid
+graph LR
+api[API] --> db[Postgres]
+api --> cache[Redis]
+%%color Redis green box
+@end
+
+** 10. Links, mermaid
+
+   `:NorgDiagramFloat` here: Tab cycles Index / Projects / Journal,
+   <CR> follows.
+
+@code mermaid
+graph TD
+A[Index] --> B[Projects]
+A --> C[Journal]
+%%link Index {:index:}
+%%link Projects {:projects/overview:}
+%%link Journal {:journal:** Today}
+@end
+
+** 11. Links, d2
+
+@code d2
+api: API
+db: Postgres
+api -> db: query
+#link API {:services/api:}
+#link Postgres {:services/db:}
+@end
+
+** 12. Links and colors together
+
+   Directives of both kinds in one block; neither should leak into the
+   source the renderer sees.
+
+@code d2
+api: API
+db: Postgres
+api -> db
+#color API green box
+#link API {:services/api:}
+@end
+
+** 13. Wide diagram, --max-width
+
+   Should compact or clip at the window edge, not overflow. Resize the
+   window and it should re-render.
+
+@code mermaid
+graph LR
+A[Alpha] --> B[Bravo] --> C[Charlie] --> D[Delta] --> E[Echo] --> F[Foxtrot] --> G[Golf] --> H[Hotel]
+@end
+
+** 14. Broken source: error path
+
+   Renderer stderr shown in `err_hl`, no crash, other blocks unaffected.
+
+@code mermaid
+graph LR
+classDef
+A --> B
+@end
+
+** 15. Unknown color name falls through
+
+   `chartreuse` is neither a palette name nor a highlight group, so the
+   directive is ignored and the label renders normally.
+
+@code d2
+api: API
+#color API chartreuse
+@end
+
+** 16. Not a diagram: must be left completely alone
+
+@code lua
+local function hello()
+	print("this block must never be rendered or concealed")
+end
+@end
+
+** 17. Two blocks back to back, no blank line between
+
+   Both diagrams must appear, stacked
+
+@code mermaid
+graph TD
+U[One] --> V[Two]
+@end
+@code mermaid
+graph TD
+W[Three] --> X[Four]
+@end
+
+** 18. Trailing block at end of file
+
+   Nothing follows, so the anchor falls back to the line above.
+
+@code mermaid
+graph LR
+Last[Final] --> Node[Block]
+@end

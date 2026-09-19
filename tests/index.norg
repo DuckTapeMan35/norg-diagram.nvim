@@ -1,0 +1,6 @@
+
+
+@code mermaid
+graph TD
+Index --> kek
+@end
