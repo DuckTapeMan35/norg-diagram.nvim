@@ -4,7 +4,7 @@
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
 
   outputs =
-    { nixpkgs }:
+    { self, nixpkgs, ... }:
     let
       systems = [
         "x86_64-linux"
@@ -38,7 +38,7 @@
           ];
 
           shellHook = ''
-            export NORG_DIAGRAM_DEV="$PWD"
+            export NORG_DIAGRAM_DEV="${self}"
           '';
         };
       });
