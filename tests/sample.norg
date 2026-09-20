@@ -23,6 +23,14 @@ db: Postgres
 api -> db: query
 @end
 
+** 3. Basic graph-easy
+@code easy
+[ q0 ] -- a --> [ q1 ]
+[ q1 ] -- b --> [ q1 ]
+[ q1 ] -- a --> [ q2 ]
+[ q2 ] -- a,b --> [ q2 ]
+@end
+
 ** 3. Theme colors via ::: (mermaid only)
 
    No classDef lines: the preprocessor generates them. Labels only,

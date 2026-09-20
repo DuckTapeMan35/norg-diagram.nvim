@@ -101,6 +101,23 @@ M.config = {
 				return a
 			end,
 		},
+
+		easy = {
+			bin = "graph-easy",
+			ext = ".txt",
+			classes = false,
+
+			as = "boxart", -- "boxart" (unicode) | "ascii"
+			from = nil, -- nil for native syntax, or "dot"
+			args = function(_, _, file, r)
+				local a = {}
+				if r.from then
+					vim.list_extend(a, { "--from=" .. r.from })
+				end
+				vim.list_extend(a, { "--as=" .. r.as, file })
+				return a
+			end,
+		},
 	},
 
 	max_width = "window", -- number | "auto" | "window" | nil
