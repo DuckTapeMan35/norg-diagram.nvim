@@ -123,6 +123,7 @@ M.config = {
 	max_width = "window", -- number | "auto" | "window" | nil
 	conceal = true,
 	fold = true,
+	position = "replace", -- "replace" | "after"
 	classes = {}, -- ["className"] = "HlGroup"
 	box_color = true,
 	hl = "Comment",
@@ -180,9 +181,10 @@ local function find_blocks(buf)
 	return blocks
 end
 
--- Nearest visible row above `block` that no block occupies.
--- Returns row, or nil when the block starts the file.
-local function anchor_for(block, blocks)
+-- Where to hang the art. "replace" puts it where the block sits, by
+-- anchoring to the last visible line above it. "after" puts it below the
+-- block, anchoring to the first visible line beneath.
+local function anchor_for(block, blocks, buf)
 	local hidden = {}
 	for _, b in ipairs(blocks) do
 		for row = b.start_row, b.end_row do
@@ -190,11 +192,26 @@ local function anchor_for(block, blocks)
 		end
 	end
 
+	if M.config.position == "after" then
+		local total = vim.api.nvim_buf_line_count(buf)
+		local row = block.end_row + 1
+		while row < total and hidden[row] do
+			row = row + 1
+		end
+		if row < total then
+			return row, true -- above this line
+		end
+		return nil, nil
+	end
+
 	local row = block.start_row - 1
 	while row >= 0 and hidden[row] do
 		row = row - 1
 	end
-	return row >= 0 and row or nil
+	if row >= 0 then
+		return row, false -- below this line
+	end
+	return nil, nil
 end
 
 local function neorg_concealed(buf)
@@ -305,10 +322,11 @@ local function place(buf, block, blocks, lines, want, link_want, hl)
 		table.insert(virt, chunks)
 	end
 
-	local anchor = anchor_for(block, blocks)
+	local anchor, above = anchor_for(block, blocks, buf)
 	if anchor then
 		vim.api.nvim_buf_set_extmark(buf, ns, anchor, 0, {
 			virt_lines = virt,
+			virt_lines_above = above,
 			priority = 200,
 		})
 	else

@@ -1,0 +1,258 @@
+*norg-diagram.norg*  Text-rendered diagrams for Neorg
+
+* norg-diagram                                                 *norg-diagram*
+
+  Renders {** Renderers}[mermaid, d2 and graph-easy] diagrams as text inside
+  `.norg` buffers, using virtual lines.
+
+  No image protocol is involved, so diagrams work over ssh, inside tmux, and
+  in any terminal. They scroll, fold and search like the rest of the buffer.
+
+  NOTE: If you have `core.concealer` enabled, run `:Neorg toggle-concealer`
+  to see the raw markup in this file.
+
+** Contents                                           *norg-diagram-contents*
+
+   ~ {** Requirements}
+   ~ {** Usage}
+   ~ {** Renderers}
+   ~ {** Directives}
+   ~ {** Configuration}
+   ~ {** Commands}
+   ~ {** Troubleshooting}
+
+** Requirements                                   *norg-diagram-requirements*
+
+   - Neovim 0.11 or later, for `conceal_lines`
+   - Neorg, with the `norg` treesitter parser installed
+   - At least one renderer binary on your `PATH`, or configured by absolute
+     path (see {** Renderers})
+
+   Run `:checkhealth norg-diagram` to verify all of the above.
+
+** Usage                                                 *norg-diagram-usage*
+
+   Write a diagram in a code block tagged with the renderer's name:
+
+   @code mermaid
+   graph LR
+   A[Index] --> B[Projects]
+   @end
+
+   The rendered diagram appears below the block, and the source is concealed
+   while `core.concealer` is active. Edit the source and it re-renders when
+   you leave insert mode or stop typing.
+
+   Rendering is cached by source, renderer and window width, so re-rendering
+   an unchanged diagram costs nothing.
+
+*** Setup                                                *norg-diagram-setup*
+
+    @code lua
+    require("norg-diagram").setup({
+      renderers = {
+        mermaid = { bin = "mermaid-ascii" },
+        d2 = { bin = "d2", layout = "tala" },
+      },
+      classes = {
+        service = "Function",
+        store = "Constant",
+      },
+    })
+    @end
+
+    Every option is described under {** Configuration}.
+
+** Renderers                                         *norg-diagram-renderers*
+
+   Each renderer is an entry in the `renderers` table, keyed by the tag you
+   write after `@code`. Only `bin` normally needs setting; it may be a name
+   on `PATH` or an absolute path.
+
+*** mermaid                                            *norg-diagram-mermaid*
+
+    Uses {https://github.com/AlexanderGrooff/mermaid-ascii}[mermaid-ascii].
+    Flowcharts and sequence diagrams. Supports per-node colors through
+    mermaid's `:::` class syntax (see {*** Classes}).
+
+    Options:
+    - `border_padding`   space between a label and its border (default 1)
+    - `padding_x`        horizontal space between nodes (default 5)
+    - `padding_y`        vertical space between nodes (default 5)
+    - `coords`           draw debug coordinates
+    - `verbose`          verbose renderer output
+
+    Honours the global `max_width` (see {*** Display}).
+
+*** d2                                                      *norg-diagram-d2*
+
+    Uses {https://d2lang.com}[d2] with `--stdout-format ascii`. Requires d2
+    0.7.1 or later; 0.9.0 or later for the `tala` layout; 0.9.0 or later is recommended as it is much faster.
+
+    Options:
+    - `layout`      `dagro` | `elk` | `tala`; nil uses d2's default
+    - `ascii_mode`  `extended` (Unicode) or `standard` (ASCII)
+
+    NOTE: d2's ASCII renderer supports no styles, so colors come from
+    {*** Color directives} rather than from the diagram source.
+
+    NOTE: `standard` mode draws boxes with `+` and `|`, which box colouring
+    cannot detect. Keep `extended` unless you need pure ASCII.
+
+*** graph-easy                                      *norg-diagram-graph-easy*
+
+    Uses {https://metacpan.org/pod/Graph::Easy}[Graph::Easy]. Good for state machines and automata:
+    it handles self-loops and edge labels better than
+    the others.
+
+    Options:
+    - `as`   `boxart` (Unicode) or `ascii`
+
+    NOTE: combining `origin`/`offset` with `flow` can make Graph::Easy hang.
+    Prefer `flow` alone and let it place the nodes.
+
+** Directives                                       *norg-diagram-directives*
+
+   Directives are comment lines inside a diagram block. They are stripped
+   before the source reaches the renderer, so they never affect layout.
+
+   Use the comment character of the language you are writing: `%%` for
+   mermaid, `#` for d2 and graph-easy. Both forms are accepted everywhere.
+
+*** Color directives                                    *norg-diagram-color*
+
+    @code
+    #color <label> <color>
+    #color <label> <color> box
+    @end
+
+    Colors the text of `<label>` wherever it appears in the rendered output,
+    or the whole box containing it when `box` is given.
+
+    `<color>` may be:
+    - a palette name: `red`, `green`, `yellow`, `blue`, `magenta`, `cyan`,
+      `white`, `black`, and their `bright_` variants. These resolve against
+      your colorscheme's terminal colors, so they follow your theme.
+    - a highlight group name, such as `DiagnosticError`
+    - a literal `#rrggbb` value
+
+    Both forms may be given for the same label, so a box and its label can
+    take different colors:
+
+    @code d2
+    api: API
+    db: Postgres
+    api -> db
+    #color API red box
+    #color API green
+    @end
+
+*** Classes                                            *norg-diagram-classes*
+
+    For mermaid only. Nodes tagged with `:::name` take the color mapped to
+    that class name. No `classDef` line is needed; one is generated.
+
+    @code mermaid
+    graph LR
+    api[API]:::service --> db[Postgres]:::store
+    @end
+
+    Class names that match a palette name resolve to that theme color.
+    Others are mapped through the `classes` option, and anything left over
+    takes a color from a built-in palette.
+
+    A class color always wins over a `#color` directive for the same label.
+
+*** Link directives                                      *norg-diagram-links*
+
+    @code norg
+    #link <label> {:some/file:}
+    #link <label> {:some/file:** Heading}
+    @end
+
+    Marks a node as a link to a Neorg target. In the inline render the label
+    is highlighted as a link; to follow it, open the diagram in a float with
+    `:NorgDiagramFloat` (see {** Commands}).
+
+    Links cannot be followed inline, because virtual text has no cursor
+    position. The float holds the same diagram as real text, with Neorg's
+    own link handling applied.
+
+** Configuration                                        *norg-diagram-config*
+
+*** Display                                            *norg-diagram-display*
+
+    - `max_width`      `"window"` fits the window, `"auto"` lets the renderer
+                       decide, a number sets an explicit column count, `nil`
+                       omits the limit (default `"window"`)
+    - `conceal`        hide the source block (default `true`)
+    - `fold`           close the block's fold, so the cursor steps over it in
+                       one motion (default `true`)
+    - `concealcursor`  value set for norg buffers; `""` leaves it alone
+                       (default `"nvic"`)
+
+    Concealing follows `:Neorg toggle-concealer`: turning Neorg's concealer
+    off reveals diagram sources too.
+
+*** Highlighting                                    *norg-diagram-highlights*
+
+    - `hl`        group for uncoloured diagram text (default `Comment`)
+    - `edge_hl`   group for box borders and connectors (default `Comment`)
+    - `err_hl`    group for renderer errors (default `DiagnosticError`)
+    - `link_hl`   group for linked labels
+                  (default `@neorg.links.description`)
+    - `classes`   map of class name to highlight group, e.g.
+                  `{ service = "Function" }`
+    - `box_color` allow `box` directives to colour whole rectangles
+                  (default `true`)
+
+    Setting `edge_hl` to something dimmer than `hl` makes labels stand
+    forward and usually reads better than a uniformly coloured diagram.
+
+*** Behaviour                                        *norg-diagram-behaviour*
+
+    - `debounce_ms`  delay before re-rendering after a change (default 300)
+    - `timeout_ms`   kill a renderer that has not finished (default 5000)
+    - `enabled`      render at all (default `true`)
+
+** Commands                                           *norg-diagram-commands*
+
+   - `:NorgDiagramRender`      re-render the current buffer
+   - `:NorgDiagramToggle`      turn rendering on or off
+   - `:NorgDiagramClearCache`  drop cached renders and re-render
+   - `:NorgDiagramFloat`       open the diagram under the cursor in a float,
+                               where `<Tab>` cycles linked nodes and `<CR>`
+                               follows one
+   - `:NorgDiagramWhich`       print which copy of the plugin is loaded
+   - `:NorgDiagramReload`      reload the plugin from disk
+
+   The last two exist for development. `:NorgDiagramWhich` is the quickest
+   way to tell whether you are running a checkout or an installed copy.
+
+** Troubleshooting                                   *norg-diagram-troubles*
+
+   $ Nothing renders
+   Run `:checkhealth norg-diagram`. The usual causes are a missing renderer
+   binary or a missing `norg` treesitter parser.
+
+   $ The source is visible alongside the diagram
+   `conceallevel` must be 2. Neorg normally sets this; check with
+   `:setlocal conceallevel?`.
+
+   $ The block reveals itself as the cursor passes over it
+   `concealcursor` must include `n`. Set the `concealcursor` option, or set
+   it yourself for norg buffers.
+
+   $ Colors do not follow my colorscheme
+   Palette names resolve through `vim.g.terminal_color_*`. A colorscheme
+   that does not set those falls back to a fixed group per name.
+
+   $ A diagram is cut off at the right edge
+   Virtual lines do not wrap. Use `max_width = "window"`, or switch the
+   diagram to a vertical layout.
+
+   $ Changing a renderer option does nothing
+   Renders are cached. Run `:NorgDiagramClearCache`.
+
+#comment
+   vim:tw=78:ft=norg:norl:conceallevel=0:concealcursor=:
