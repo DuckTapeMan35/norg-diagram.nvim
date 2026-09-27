@@ -223,14 +223,7 @@
    - `:NorgDiagramRender`      re-render the current buffer
    - `:NorgDiagramToggle`      turn rendering on or off
    - `:NorgDiagramClearCache`  drop cached renders and re-render
-   - `:NorgDiagramFloat`       open the diagram under the cursor in a float,
-                               where `<Tab>` cycles linked nodes and `<CR>`
-                               follows one
-   - `:NorgDiagramWhich`       print which copy of the plugin is loaded
-   - `:NorgDiagramReload`      reload the plugin from disk
-
-   The last two exist for development. `:NorgDiagramWhich` is the quickest
-   way to tell whether you are running a checkout or an installed copy.
+   - `:NorgDiagramFloat`       open the diagram under the cursor in a float, where `<Tab>` cycles linked nodes and `<CR>` follows one
 
 ** Troubleshooting                                   *norg-diagram-troubles*
 
