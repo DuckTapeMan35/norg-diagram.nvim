@@ -1,0 +1,18 @@
+norg-diagram	norg-diagram.norg	/* norg-diagram
+norg-diagram-requirements	norg-diagram.norg	/** Requirements
+norg-diagram-usage	norg-diagram.norg	/** Usage
+norg-diagram-setup	norg-diagram.norg	/*** Setup
+norg-diagram-renderers	norg-diagram.norg	/** Renderers
+norg-diagram-mermaid	norg-diagram.norg	/*** mermaid
+norg-diagram-d2	norg-diagram.norg	/*** d2
+norg-diagram-graph-easy	norg-diagram.norg	/*** graph-easy
+norg-diagram-directives	norg-diagram.norg	/** Directives
+norg-diagram-color	norg-diagram.norg	/*** Color directives
+norg-diagram-classes	norg-diagram.norg	/*** Classes
+norg-diagram-links	norg-diagram.norg	/*** Link directives
+norg-diagram-config	norg-diagram.norg	/** Configuration
+norg-diagram-display	norg-diagram.norg	/*** Display
+norg-diagram-highlights	norg-diagram.norg	/*** Highlighting
+norg-diagram-behaviour	norg-diagram.norg	/*** Behaviour
+norg-diagram-commands	norg-diagram.norg	/** Commands
+norg-diagram-troubles	norg-diagram.norg	/** Troubleshooting
