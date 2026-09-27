@@ -39,7 +39,7 @@
    A[Index] --> B[Projects]
    @end
 
-   The rendered diagram appears below the block, and the source is concealed
+   The rendered diagram appears above or below the block, and the source is concealed
    while `core.concealer` is active. Edit the source and it re-renders when
    you leave insert mode or stop typing.
 
@@ -188,6 +188,9 @@
     - `conceal`        hide the source block (default `true`)
     - `fold`           close the block's fold, so the cursor steps over it in
                        one motion (default `true`)
+    - `position`       `"replace"` hangs the diagram where the block sits,
+      `"after"` puts it below the block (default
+      `"replace"`)
     - `concealcursor`  value set for norg buffers; `""` leaves it alone
                        (default `"nvic"`)
 
